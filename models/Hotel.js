@@ -20,9 +20,8 @@ Hotel.init({
     type: DataTypes.STRING,
     allowNull: false,
   },
-  status: {
-    type: DataTypes.ENUM('active', 'closed'),
-    defaultValue: 'active',
+  phone: {
+    type: DataTypes.STRING,
     allowNull: false,
   },
 }, {

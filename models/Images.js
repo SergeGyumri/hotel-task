@@ -14,7 +14,7 @@ Images.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  image: {
+  url: {
     type: DataTypes.STRING,
     allowNull: false,
   },

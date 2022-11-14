@@ -30,7 +30,7 @@ app.use((err, req, res, next) => {
   // render the error page
   // err.status || 500
   if (err instanceof MulterError) {
-    // eslint-disable-next-line no-param-reassign
+    err.message = 'images error';
     err.status = 409;
   }
   res.status(err.status || 500);
