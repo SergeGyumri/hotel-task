@@ -8,9 +8,23 @@ class HotelController {
   static list = async (req, res, next) => {
     try {
       const hotel = await Hotel.findAll({
+        attributes: ['id', 'name', 'address', 'phone'],
         include: [{
           model: Rooms,
           as: 'rooms',
+          attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price', 'hotelId'],
+          include: [{
+            model: Images,
+            as: 'images',
+            attributes: ['id', 'url'],
+          }],
+        }, {
+          model: Images,
+          as: 'images',
+          where: {
+            roomId: null,
+          },
+          attributes: ['id', 'url'],
         }],
       });
       res.json({
@@ -25,20 +39,27 @@ class HotelController {
   static single = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const hotel = Hotel.findOne({
+      const hotel = await Hotel.findOne({
         where: {
           id,
         },
+        attributes: ['id', 'name', 'address', 'phone'],
         include: [{
           model: Rooms,
           as: 'rooms',
+          attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price'],
           include: [{
             model: Images,
             as: 'images',
+            attributes: ['id', 'url'],
           }],
         }, {
+          where: {
+            roomId: null,
+          },
           model: Images,
           as: 'images',
+          attributes: ['id', 'url'],
         }],
       });
       res.json({
@@ -162,7 +183,7 @@ class HotelController {
 
   static delete = async (req, res, next) => {
     try {
-      const { id } = req.body;
+      const { id } = req.params;
       validate(req.body, {
         id: 'numeric|required',
       });
@@ -180,7 +201,7 @@ class HotelController {
         },
         raw: true,
       });
-      Helper.deleteHotel(images, id);
+      Helper.delete(images, id);
       await Hotel.destroy({
         where: {
           id,

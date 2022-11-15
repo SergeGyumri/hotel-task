@@ -7,14 +7,17 @@ import Helper from '../utils/Helper';
 class RoomController {
   static list = async (req, res, next) => {
     try {
-      const { hotelId } = req.body;
-      const rooms = Rooms.findAll({
+      const { hotelId } = req.params;
+      console.log(hotelId);
+      const rooms = await Rooms.findAll({
         where: {
           hotelId,
         },
+        attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price'],
         include: [{
           model: Images,
           as: 'images',
+          attributes: ['id', 'url'],
         }],
       });
       res.json({
@@ -28,17 +31,16 @@ class RoomController {
 
   static single = async (req, res, next) => {
     try {
-      const { roomId } = req.params;
-      const room = Rooms.findOne({
+      const { id } = req.params;
+      const room = await Rooms.findOne({
         where: {
-          roomId,
+          id,
         },
+        attributes: ['hotelId', 'price', 'doubleBed', 'singleBed', 'number'],
         include: [{
           model: Images,
           as: 'images',
-        }, {
-          model: Hotel,
-          as: 'hotel',
+          attributes: ['id', 'url'],
         }],
       });
       res.json({
@@ -50,7 +52,7 @@ class RoomController {
     }
   };
 
-  static addRoom = async (req, res, next) => {
+  static create = async (req, res, next) => {
     try {
       const {
         hotelId, number, price, singleBed, doubleBed,
@@ -65,7 +67,7 @@ class RoomController {
       validate(req.files, {
         'images.*.path': 'string|required',
       });
-      let hotel = await Hotel.findOne({
+      const hotel = await Hotel.findOne({
         where: {
           id: hotelId,
         },
@@ -82,6 +84,7 @@ class RoomController {
       if (!_.isEmpty(room)) {
         throw HttpErrors(422, 'choose another room number');
       }
+
       room = await Rooms.create({
         number, hotelId, price, doubleBed, singleBed,
       });
@@ -91,8 +94,13 @@ class RoomController {
         where: {
           id: room.id,
         },
+        attributes: ['hotelId', 'price', 'doubleBed', 'singleBed', 'number'],
+        include: [{
+          model: Images,
+          as: 'images',
+          attributes: ['id', 'url'],
+        }],
       });
-      console.log(room);
       res.json({
         status: 'ok',
         room,
@@ -102,7 +110,7 @@ class RoomController {
     }
   };
 
-  static editRoom = async (req, res, next) => {
+  static update = async (req, res, next) => {
     try {
       const {
         id, number, doubleBed, singleBed, price, images,
@@ -119,7 +127,8 @@ class RoomController {
       if (_.isEmpty(req.files) && _.isEmpty(images)) {
         throw HttpErrors(409, 'images error');
       }
-      if ((!_.isEmpty(req.files) && !_.isEmpty(images)) && (req.files.length + images.length > 10)) {
+      if ((!_.isEmpty(req.files) && !_.isEmpty(images))
+        && (req.files.length + images.length > 10)) {
         throw HttpErrors(409, 'images error');
       }
       let room = await Rooms.findOne({
@@ -134,10 +143,8 @@ class RoomController {
         where: {
           roomId: id,
         },
-        raw: true,
         attributes: ['url'],
       });
-      const deletedImages = Helper.updateImages(previousImages, images);
       await Rooms.update({
         number, doubleBed, singleBed, price,
       }, {
@@ -145,6 +152,7 @@ class RoomController {
           id,
         },
       });
+      const deletedImages = Helper.deleteImages(previousImages, images);
       await Images.destroy({
         where: {
           url: { $in: deletedImages.map((d) => d.url) },
@@ -158,12 +166,11 @@ class RoomController {
         where: {
           id,
         },
+        attributes: ['hotelId', 'price', 'name', 'doubleBed', 'singleBed'],
         include: [{
           model: Images,
           as: 'images',
-        }, {
-          model: Hotel,
-          as: 'hotel',
+          attributes: ['id', 'url'],
         }],
       });
       res.json({
@@ -175,9 +182,9 @@ class RoomController {
     }
   };
 
-  static deleteRoom = async (req, res, next) => {
+  static delete = async (req, res, next) => {
     try {
-      const { id } = req.body;
+      const { id } = req.params;
       validate(req.body, {
         id: 'numeric|required',
       });
@@ -194,17 +201,11 @@ class RoomController {
           roomId: id,
         },
         attributes: ['url'],
-        raw: true,
       });
-      Helper.deleteHotel(deleteImages, room.hotelId, id);
+      Helper.delete(deleteImages, room.hotelId, id);
       await Rooms.destroy({
         where: {
           id,
-        },
-      });
-      await Images.destroy({
-        where: {
-          roomId: id,
         },
       });
       res.json({

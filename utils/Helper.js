@@ -17,7 +17,7 @@ class Helper {
     return createdImagesPath;
   };
 
-  static deleteHotel = (images, hotelId, roomId) => {
+  static delete = (images, hotelId, roomId) => {
     const hotelFilesDir = path.join(__dirname, '../public');
     if (fs.existsSync(hotelFilesDir)) {
       if (_.isEmpty(roomId)) {

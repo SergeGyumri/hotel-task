@@ -4,8 +4,10 @@ import upload from '../middlewares/upload';
 
 const router = express.Router();
 
-router.post('/add-room', upload.array('images[]', 10), RoomController.addRoom);
-router.put('/edit-room', upload.array('images[]', 10), RoomController.editRoom);
-router.delete('/delete-room', RoomController.deleteRoom);
+router.get('/list/:hotelId', RoomController.list);
+router.get('/single/:id', RoomController.single);
+router.post('/create', upload.array('images[]', 10), RoomController.create);
+router.put('/update', upload.array('images[]', 10), RoomController.update);
+router.delete('/delete/:id', RoomController.delete);
 
 export default router;

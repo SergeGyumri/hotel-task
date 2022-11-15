@@ -31,6 +31,14 @@ Reserve.init({
     type: DataTypes.STRING,
     allowNull: false,
   },
+  hotelId: {
+    type: DataTypes.BIGINT,
+    allowNull: false,
+  },
+  roomId: {
+    type: DataTypes.BIGINT,
+    allowNull: false,
+  },
 }, {
   sequelize,
   tableName: 'reserve',
