@@ -41,7 +41,15 @@ Rooms.init({
 
 Rooms.belongsTo(Hotel, {
   foreignKey: 'hotelId',
+  as: 'hotel',
   onDelete: 'cascade',
   onUpdate: 'cascade',
 });
+Hotel.hasMany(Rooms, {
+  foreignKey: 'hotelId',
+  as: 'rooms',
+  onDelete: 'cascade',
+  onUpdate: 'cascade',
+});
+
 export default Rooms;

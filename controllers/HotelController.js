@@ -1,23 +1,67 @@
 import HttpErrors from 'http-errors';
 import _ from 'lodash';
 import validate from '../services/validate';
-import { Hotel, Images } from '../models';
+import { Hotel, Images, Rooms } from '../models';
 import Helper from '../utils/Helper';
 
 class HotelController {
-  static addHotel = async (req, res, next) => {
+  static list = async (req, res, next) => {
     try {
-      const images = req.files;
+      const hotel = await Hotel.findAll({
+        include: [{
+          model: Rooms,
+          as: 'rooms',
+        }],
+      });
+      res.json({
+        status: 'ok',
+        hotel,
+      });
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  static single = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const hotel = Hotel.findOne({
+        where: {
+          id,
+        },
+        include: [{
+          model: Rooms,
+          as: 'rooms',
+          include: [{
+            model: Images,
+            as: 'images',
+          }],
+        }, {
+          model: Images,
+          as: 'images',
+        }],
+      });
+      res.json({
+        status: 'ok',
+        hotel,
+      });
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  static create = async (req, res, next) => {
+    try {
       const { name, address, phone } = req.body;
       validate(req.body, {
         name: 'string|min:1|max:20|required',
         address: 'string|min:5|max:20|required',
         phone: 'string|min:3|max:20|required',
       });
-      validate({ images }, {
+      validate(req.files, {
         'images.*.path': 'string|required',
       });
-      const checkHotel = await Hotel.findOne({
+      let hotel = await Hotel.findOne({
         where: {
           $or: [
             { name },
@@ -25,64 +69,64 @@ class HotelController {
           ],
         },
       });
-      if (!_.isEmpty(checkHotel)) {
+      if (!_.isEmpty(hotel)) {
         throw HttpErrors(422, 'choose another address or name');
       }
-      const hotel = await Hotel.create({
+      hotel = await Hotel.create({
         name, address, phone,
       });
-      const createdImagesPath = Helper.imgWork(images, hotel.id);
-      await Images.bulkCreate(createdImagesPath);
-      const imagesPath = createdImagesPath.map((img) => img.url);
-
+      const createdImagesPaths = Helper.createImages(req.files, hotel.id);
+      await Images.bulkCreate(createdImagesPaths);
+      const images = await Images.findAll({
+        where: {
+          hotelId: hotel.id,
+        },
+        attributes: ['id', 'url'],
+      });
       res.json({
         status: 'ok',
         hotel,
-        imagesPath,
+        images,
       });
     } catch (e) {
       next(e);
     }
   };
 
-  static editHotel = async (req, res, next) => {
+  static update = async (req, res, next) => {
     try {
       const {
-        id, name, address, phone, newPaths,
+        id, name, address, phone, images,
       } = req.body;
-      const images = req.files;
       validate(req.body, {
         name: 'string|min:1|max:20|required',
         address: 'string|min:5|max:20|required',
         phone: 'string|min:3|max:20|required',
         id: 'numeric|required',
-        newPaths: 'array|max:10',
+        images: 'array|max:10',
       });
-      validate({ images }, {
-        'images.*.path': 'string',
-      });
-      if (_.isEmpty(images) && _.isEmpty(newPaths)) {
-        throw HttpErrors(409, 'images error');
+      if (_.isEmpty(req.files) && _.isEmpty(images)) {
+        throw HttpErrors(409, 'images is required');
       }
-      if ((!_.isEmpty(images) && !_.isEmpty(newPaths)) && (images.length + newPaths.length > 10)) {
-        throw HttpErrors(409, 'images error');
+      if ((!_.isEmpty(req.files) && !_.isEmpty(images))
+        && (req.files.length + images.length > 10)) {
+        throw HttpErrors(409, 'cannot be more than 10');
       }
-      const checkHotel = await Hotel.findOne({
+      let hotel = await Hotel.findOne({
         where: {
           id,
         },
       });
-      if (_.isEmpty(checkHotel)) {
+      if (_.isEmpty(hotel)) {
         throw HttpErrors(422, 'hotel not found');
       }
       const previousImages = await Images.findAll({
         where: {
           hotelId: id,
         },
-        raw: true,
         attributes: ['url'],
       });
-      const deletedImages = Helper.updateImages(previousImages, newPaths, id);
+      const deletedImages = Helper.deleteImages(previousImages, images);
       await Hotel.update({ name, address, phone }, {
         where: {
           id,
@@ -90,36 +134,33 @@ class HotelController {
       });
       await Images.destroy({
         where: {
-          url: deletedImages,
+          url: { $in: deletedImages.map((d) => d.url) },
           hotelId: id,
         },
       });
-      const createdImagesPath = Helper.imgWork(images, id);
-      await Images.bulkCreate(createdImagesPath);
-      const imagesPath = await Images.findAll({
-        where: {
-          hotelId: id,
-        },
-        raw: true,
-        attributes: ['url', 'id'],
-      });
-      const hotel = await Hotel.findOne({
+      const newImages = Helper.createImages(req.files, id);
+      await Images.bulkCreate(newImages);
+      hotel = await Hotel.findAll({
         where: {
           id,
         },
-        raw: true,
+        attributes: ['id', 'name', 'address', 'phone'],
+        include: [{
+          model: Images,
+          as: 'images',
+          attributes: ['id', 'url'],
+        }],
       });
       res.json({
         status: 'ok',
         hotel,
-        imagesPath,
       });
     } catch (e) {
       next(e);
     }
   };
 
-  static deleteHotel = async (req, res, next) => {
+  static delete = async (req, res, next) => {
     try {
       const { id } = req.body;
       validate(req.body, {

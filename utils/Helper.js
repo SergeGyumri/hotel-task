@@ -4,7 +4,7 @@ import os from 'os';
 import _ from 'lodash';
 
 class Helper {
-  static imgWork = (images, hotelId, roomId) => {
+  static createImages = (images, hotelId, roomId) => {
     const createdImagesPath = [];
     const hotelFilesDir = path.join(__dirname, `../public/uploads/${hotelId}`);
     if (!fs.existsSync(hotelFilesDir)) {
@@ -33,17 +33,14 @@ class Helper {
     }
   };
 
-  static updateImages = (previousImages, stayPaths) => {
-    const previousPaths = previousImages.map((url) => url.url);
-    const deletes = _.difference(previousPaths, stayPaths);
-    if (!_.isEmpty(deletes)) {
-      const hotelFilesDir = path.join(__dirname, '../public');
-      deletes.forEach((img) => {
-        if (fs.existsSync(path.join(hotelFilesDir, img))) {
-          fs.unlinkSync(path.join(hotelFilesDir, img));
-        }
-      });
-    }
+  static deleteImages = (previousImages, stayPaths) => {
+    const deletes = _.differenceBy(previousImages, stayPaths, 'url');
+    const hotelFilesDir = path.join(__dirname, '../public');
+    deletes.forEach((img) => {
+      if (fs.existsSync(path.join(hotelFilesDir, img.url))) {
+        fs.unlinkSync(path.join(hotelFilesDir, img.url));
+      }
+    });
     return deletes;
   };
 }

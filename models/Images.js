@@ -23,15 +23,27 @@ Images.init({
   tableName: 'images',
   modelName: 'images',
 });
-
-Images.belongsTo(Rooms, {
-  foreignKey: 'roomId',
-  onDelete: 'cascade',
-  onUpdate: 'cascade',
-});
 Images.belongsTo(Hotel, {
   foreignKey: 'hotelId',
   onDelete: 'cascade',
   onUpdate: 'cascade',
 });
+Images.belongsTo(Rooms, {
+  foreignKey: 'roomId',
+  onDelete: 'cascade',
+  onUpdate: 'cascade',
+});
+Rooms.hasMany(Images, {
+  foreignKey: 'roomId',
+  as: 'images',
+  onDelete: 'cascade',
+  onUpdate: 'cascade',
+});
+Hotel.hasMany(Images, {
+  foreignKey: 'hotelId',
+  as: 'images',
+  onDelete: 'cascade',
+  onUpdate: 'cascade',
+});
+
 export default Images;
