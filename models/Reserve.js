@@ -14,11 +14,11 @@ Reserve.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  from: {
+  fromDate: {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
-  to: {
+  toDate: {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
@@ -29,14 +29,6 @@ Reserve.init({
   },
   phone: {
     type: DataTypes.STRING,
-    allowNull: false,
-  },
-  hotelId: {
-    type: DataTypes.BIGINT,
-    allowNull: false,
-  },
-  roomId: {
-    type: DataTypes.BIGINT,
     allowNull: false,
   },
 }, {
