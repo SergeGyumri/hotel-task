@@ -4,11 +4,12 @@ import path from 'path';
 import logger from 'morgan';
 import { MulterError } from 'multer';
 import indexRouter from './routes/index';
+import headers from './middlewares/headers';
 
 const app = express();
 
 // view engine setup
-
+app.use(headers);
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
