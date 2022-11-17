@@ -5,10 +5,46 @@ import validate from '../services/validate';
 import Helper from '../utils/Helper';
 
 class RoomController {
+  static search = async (req, res, next) => {
+    try {
+      const {
+        hotelId, singleBed, doubleBed, price,
+      } = req.query;
+      validate(req.query, {
+        hotelId: 'numeric|required',
+        price: 'numeric|required',
+        singleBed: 'numeric|required|max:10|min:0',
+        doubleBed: 'numeric|required|max:10|min:0',
+      });
+      const room = await Rooms.findAll({
+        where: {
+          hotelId,
+          singleBed,
+          doubleBed,
+          price: { $lte: price },
+        },
+        attributes: ['price', 'doubleBed', 'singleBed', 'number'],
+        include: [{
+          model: Images,
+          as: 'images',
+          attributes: ['id', 'url'],
+        }],
+      });
+      res.json({
+        status: 'ok',
+        room,
+      });
+    } catch (e) {
+      next(e);
+    }
+  };
+
   static list = async (req, res, next) => {
     try {
       const { hotelId } = req.params;
-      console.log(hotelId);
+      validate(req.params, {
+        hotelId: 'numeric|required',
+      });
       const rooms = await Rooms.findAll({
         where: {
           hotelId,
@@ -32,6 +68,9 @@ class RoomController {
   static single = async (req, res, next) => {
     try {
       const { id } = req.params;
+      validate(req.params, {
+        hotelId: 'numeric|required',
+      });
       const room = await Rooms.findOne({
         where: {
           id,
@@ -94,7 +133,7 @@ class RoomController {
         where: {
           id: room.id,
         },
-        attributes: ['hotelId', 'price', 'doubleBed', 'singleBed', 'number'],
+        attributes: ['hotelId', 'price', 'doubleBed', 'singleBed', 'number', 'id'],
         include: [{
           model: Images,
           as: 'images',
@@ -185,7 +224,7 @@ class RoomController {
   static delete = async (req, res, next) => {
     try {
       const { id } = req.params;
-      validate(req.body, {
+      validate(req.params, {
         id: 'numeric|required',
       });
       const room = await Rooms.findOne({

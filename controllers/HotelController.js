@@ -39,6 +39,9 @@ class HotelController {
   static single = async (req, res, next) => {
     try {
       const { id } = req.params;
+      validate(req.params, {
+        id: 'numeric|required',
+      });
       const hotel = await Hotel.findOne({
         where: {
           id,
@@ -125,6 +128,7 @@ class HotelController {
         phone: 'string|min:3|max:20|required',
         id: 'numeric|required',
         images: 'array|max:10',
+        'images.*.url': 'required|string',
       });
       if (_.isEmpty(req.files) && _.isEmpty(images)) {
         throw HttpErrors(409, 'images is required');
@@ -184,7 +188,7 @@ class HotelController {
   static delete = async (req, res, next) => {
     try {
       const { id } = req.params;
-      validate(req.body, {
+      validate(req.params, {
         id: 'numeric|required',
       });
       const checkHotel = await Hotel.findOne({
