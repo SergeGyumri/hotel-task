@@ -3,11 +3,10 @@ import HotelController from '../controllers/HotelController';
 import upload from '../middlewares/upload';
 
 const router = express.Router();
-
+router.post('/create', upload.any(), HotelController.create);
+router.put('/update', upload.any(), HotelController.update);
+router.delete('/delete/:id', HotelController.delete);
 router.get('/list', HotelController.list);
 router.get('/single/:id', HotelController.single);
-router.post('/create', upload.array('images[]', 10), HotelController.create);
-router.put('/update', upload.array('images[]', 10), HotelController.update);
-router.delete('/delete/:id', HotelController.delete);
 
 export default router;

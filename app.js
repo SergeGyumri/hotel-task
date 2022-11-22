@@ -1,8 +1,8 @@
 import createError from 'http-errors';
-import express from 'express';
-import path from 'path';
-import logger from 'morgan';
 import { MulterError } from 'multer';
+import express from 'express';
+import logger from 'morgan';
+import path from 'path';
 import indexRouter from './routes/index';
 import headers from './middlewares/headers';
 
@@ -23,16 +23,14 @@ app.use((req, res, next) => {
 });
 
 // error handler
-/* eslint-disable */
 
+/* eslint-disable */
 app.use((err, req, res, next) => {
   /* eslint-enable */
 
-  // render the error page
-  // err.status || 500
   if (err instanceof MulterError) {
     err.message = 'images error';
-    err.status = 409;
+    err.status = err.status || 409;
   }
   res.status(err.status || 500);
   res.json({

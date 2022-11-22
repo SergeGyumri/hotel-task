@@ -7,8 +7,8 @@ const router = express.Router();
 router.get('/list/:hotelId', RoomController.list);
 router.get('/single/:id', RoomController.single);
 router.get('/list', RoomController.search);
-router.post('/create', upload.array('images[]', 10), RoomController.create);
-router.put('/update', upload.array('images[]', 10), RoomController.update);
+router.post('/create', upload.any(), RoomController.create);
+router.put('/update', upload.any(), RoomController.update);
 router.delete('/delete/:id', RoomController.delete);
 
 export default router;

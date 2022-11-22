@@ -5,86 +5,21 @@ import { Hotel, Images, Rooms } from '../models';
 import Helper from '../utils/Helper';
 
 class HotelController {
-  static list = async (req, res, next) => {
-    try {
-      const hotel = await Hotel.findAll({
-        attributes: ['id', 'name', 'address', 'phone'],
-        include: [{
-          model: Rooms,
-          as: 'rooms',
-          attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price', 'hotelId'],
-          include: [{
-            model: Images,
-            as: 'images',
-            attributes: ['id', 'url'],
-          }],
-        }, {
-          model: Images,
-          as: 'images',
-          where: {
-            roomId: null,
-          },
-          attributes: ['id', 'url'],
-        }],
-      });
-      res.json({
-        status: 'ok',
-        hotel,
-      });
-    } catch (e) {
-      next(e);
-    }
-  };
-
-  static single = async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      validate(req.params, {
-        id: 'numeric|required',
-      });
-      const hotel = await Hotel.findOne({
-        where: {
-          id,
-        },
-        attributes: ['id', 'name', 'address', 'phone'],
-        include: [{
-          model: Rooms,
-          as: 'rooms',
-          attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price'],
-          include: [{
-            model: Images,
-            as: 'images',
-            attributes: ['id', 'url'],
-          }],
-        }, {
-          where: {
-            roomId: null,
-          },
-          model: Images,
-          as: 'images',
-          attributes: ['id', 'url'],
-        }],
-      });
-      res.json({
-        status: 'ok',
-        hotel,
-      });
-    } catch (e) {
-      next(e);
-    }
-  };
-
   static create = async (req, res, next) => {
     try {
       const { name, address, phone } = req.body;
+
       validate(req.body, {
         name: 'string|min:1|max:20|required',
-        address: 'string|min:5|max:20|required',
+        address: 'string|min:5|max:50|required',
         phone: 'string|min:3|max:20|required',
       });
-      validate(req.files, {
-        'images.*.path': 'string|required',
+
+      validate({ images: req.files }, {
+        images: 'array|max:10|required',
+        'images.*.path': 'string',
       });
+
       let hotel = await Hotel.findOne({
         where: {
           $or: [
@@ -93,9 +28,13 @@ class HotelController {
           ],
         },
       });
+
       if (!_.isEmpty(hotel)) {
-        throw HttpErrors(422, 'choose another address or name');
+        throw HttpErrors(422, {
+          errors: { error: ['choose another address or name'] },
+        });
       }
+
       hotel = await Hotel.create({
         name, address, phone,
       });
@@ -107,6 +46,7 @@ class HotelController {
         },
         attributes: ['id', 'url'],
       });
+
       res.json({
         status: 'ok',
         hotel,
@@ -213,6 +153,75 @@ class HotelController {
       });
       res.json({
         status: 'ok',
+      });
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  static list = async (req, res, next) => {
+    try {
+      const hotels = await Hotel.findAll({
+        attributes: ['id', 'name', 'address', 'phone'],
+        include: [{
+          model: Rooms,
+          as: 'rooms',
+          attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price', 'hotelId'],
+          include: [{
+            model: Images,
+            as: 'images',
+            attributes: ['id', 'url'],
+          }],
+        }, {
+          model: Images,
+          as: 'images',
+          where: {
+            roomId: null,
+          },
+          attributes: ['id', 'url'],
+        }],
+      });
+      res.json({
+        status: 'ok',
+        hotels,
+      });
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  static single = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      validate(req.params, {
+        id: 'numeric|required',
+      });
+      const hotel = await Hotel.findOne({
+        where: {
+          id,
+        },
+        attributes: ['id', 'name', 'address', 'phone'],
+        include: [{
+          model: Rooms,
+          as: 'rooms',
+          attributes: ['id', 'number', 'doubleBed', 'singleBed', 'price'],
+          include: [{
+            model: Images,
+            as: 'images',
+            attributes: ['id', 'url'],
+          }],
+        }, {
+          where: {
+            roomId: null,
+          },
+          model: Images,
+          as: 'images',
+          attributes: ['id', 'url'],
+        }],
+      });
+      res.json({
+        status: 'ok',
+        hotel,
       });
     } catch (e) {
       next(e);
